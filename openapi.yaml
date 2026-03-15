@@ -1,0 +1,233 @@
+openapi: 3.0.3
+info:
+  title: Phone Validation API
+  description: API for validating phone numbers and extracting metadata
+  version: 1.0.0
+  contact:
+    name: API Services
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8081
+    description: Development server
+  - url: https://api.example.com
+    description: Production server
+
+paths:
+  /healthz:
+    get:
+      summary: Health check endpoint
+      description: Returns the health status of the service
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /v1/phone/validate:
+    post:
+      summary: Validate phone number
+      description: Validate a single phone number and extract metadata
+      tags:
+        - Phone Validation
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateInput'
+      responses:
+        '200':
+          description: Successful validation response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ValidateResult'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '405':
+          description: Method not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/phone/validate/batch:
+    post:
+      summary: Batch validate phone numbers
+      description: Validate multiple phone numbers in a single request
+      tags:
+        - Phone Validation
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchValidateInput'
+      responses:
+        '200':
+          description: Successful batch validation response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ValidateResult'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '405':
+          description: Method not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    ValidateInput:
+      type: object
+      required:
+        - phone
+      properties:
+        phone:
+          type: string
+          description: Phone number to validate
+          example: "+1 (555) 123-4567"
+        default_region:
+          type: string
+          description: Default region code for parsing
+          example: "US"
+
+    BatchValidateInput:
+      type: object
+      required:
+        - numbers
+      properties:
+        numbers:
+          type: array
+          description: Array of phone numbers to validate
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/ValidateInput'
+
+    ValidateResult:
+      type: object
+      properties:
+        input:
+          type: string
+          description: Original input phone number
+          example: "+1 (555) 123-4567"
+        e164:
+          type: string
+          description: E.164 formatted phone number
+          example: "+15551234567"
+        national:
+          type: string
+          description: National format
+          example: "(555) 123-4567"
+        international:
+          type: string
+          description: International format
+          example: "+1 555-123-4567"
+        is_valid:
+          type: boolean
+          description: Whether the phone number is valid
+          example: true
+        is_possible:
+          type: boolean
+          description: Whether the phone number is possible
+          example: true
+        country_code:
+          type: integer
+          description: Country calling code
+          example: 1
+        region:
+          type: string
+          description: Region/country code
+          example: "US"
+        line_type:
+          type: string
+          description: Type of phone line
+          enum: [landline, mobile, fixed_line_or_mobile, toll_free, premium_rate, shared_cost, voip, personal_number, pager, uan, voicemail, unknown]
+          example: "mobile"
+        carrier:
+          type: string
+          description: Mobile carrier name
+          example: "Verizon Wireless"
+        is_voip:
+          type: boolean
+          description: Whether this is a VoIP number
+          example: false
+        is_disposable_voip:
+          type: boolean
+          description: Whether this is a disposable VoIP number
+          example: false
+        validation_error:
+          type: string
+          description: Validation error message if invalid
+          example: "invalid country code"
+        normalized_input_raw:
+          type: string
+          description: Normalized input without formatting
+          example: "+15551234567"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "invalid json body"
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: API key for authentication (format: "Bearer YOUR_API_KEY")
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Phone Validation
+    description: Phone number validation and metadata extraction
