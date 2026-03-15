@@ -17,7 +17,7 @@ import (
 func main() {
 	logger := log.New(os.Stdout, "[phone] ", log.LstdFlags)
 
-	port := envString("PORT", "8081")
+	port := envString("PORT", "30013")
 	apiKey := envString("PHONE_API_KEY", "dev-phone-key")
 	if apiKey == "dev-phone-key" {
 		logger.Println("PHONE_API_KEY not set, using default development key")
